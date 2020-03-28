@@ -10,6 +10,9 @@
 #define M_PI  (3.14159265)
 #endif
 
+
+#define HARM (10) //nb d'harmonique à calculer
+
 #define TABLE_SIZE   (200)
 typedef struct
 {
@@ -57,8 +60,24 @@ static int patestCallback( const void *inputBuffer, void *outputBuffer,
 static void StreamFinished( void* userData )
 {
    paTestData *data = (paTestData *) userData;
-   printf( "Stream Completed: %s\n", data->message );
+   //printf( "Stream Completed: %s\n", data->message );
 }
+
+
+float GenerateTone(float,unsigned*,float);
+/*
+ * Permet de créer un sinus avec pour paramétre sa fréquence
+ */
+float GenerateTone(float frequency, unsigned* bufferLen,float AMP){
+    float tone;
+    unsigned duration=0.1; //on fixe la durée tres courte pour que le fait de rester appuyé fasse pérsister le son
+    const float freq = frequency/SAMPLE_RATE; 
+
+    const unsigned len = SAMPLE_RATE * duration; 
+    for(int i = 0; i < len; i++ )
+        tone =(AMP * sin(2*M_PI*freq  * ((float)i)/SAMPLE_RATE));
+        return tone;
+}   
 
 /*******************************************************************/
 int main(void);
@@ -67,32 +86,36 @@ int main(void)
     PaStreamParameters outputParameters;
     PaStream *stream;
     PaError err;
-    paTestData data;
+    paTestData data; //ce qu'on va jouer comme sons
     int i;
+    unsigned len;
 
-    printf("PortAudio Test: output sine wave. SR = %d, BufSize = %d\n", SAMPLE_RATE, FRAMES_PER_BUFFER);
+    printf("SynthPi v0 test\n");
 
     /* initialise sinusoidal wavetable */
+    float sound;
     for( i=0; i<TABLE_SIZE; i++ )
     {
-        data.sine[i] = (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
+        for(int k;k<HARM;k++){
+            data.sine[i] += GenerateTone(440,len,0.8/k);
+        }
     }
     data.left_phase = data.right_phase = 0;
     
-    err = Pa_Initialize();
-    if( err != paNoError ) goto error;
+    err = Pa_Initialize(); //Init de Portaudio
+    if( err != paNoError ) goto error; //si erreur goto 
 
-    outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
-    if (outputParameters.device == paNoDevice) {
+    outputParameters.device = Pa_GetDefaultOutputDevice(); /* périph par défaut */
+    if (outputParameters.device == paNoDevice) { //si pas de périph par défaut (cette erreur veut souvent dire que PortAudio s'est mal installé, merci de suivre le Readme)
       fprintf(stderr,"Error: No default output device.\n");
       goto error;
     }
-    outputParameters.channelCount = 2;       /* stereo output */
+    outputParameters.channelCount = 2;       /* mode stereo (support pour du 5.0 ou 7.1 à l'avenir ?) */
     outputParameters.sampleFormat = paFloat32; /* 32 bit floating point output */
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
 
-    err = Pa_OpenStream(
+    err = Pa_OpenStream( //ouverture du stream
               &stream,
               NULL, /* no input */
               &outputParameters,
@@ -100,7 +123,7 @@ int main(void)
               FRAMES_PER_BUFFER,
               paClipOff,      /* we won't output out of range samples so don't bother clipping them */
               patestCallback,
-              &data );
+              &sound );
     if( err != paNoError ) goto error;
 
     sprintf( data.message, "No Message" );

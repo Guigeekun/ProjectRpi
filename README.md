@@ -23,7 +23,7 @@ Maintenant copiez portaudio.a
 Et portAudio.h localisé dans /include
 Pour compiler :
 
-    gcc truc.c libportaudio.a -lrt -lm -lasound -pthread -o truc
+    gcc rpi.c libportaudio.a -lrt -lm -lasound -pthread -o rpi
 
 # Kézako
 
