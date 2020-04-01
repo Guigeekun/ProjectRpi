@@ -3,11 +3,34 @@ Synth thing for RaspberryPi
 
 ## Install
 
+Donc notre lib audio sera sox http://sox.sourceforge.net/
+
+    sudo apt-get install sox libsox-fmt-all bc
+
+======================================================
+Tous ce qui concerne PortAudio est OUTDATED : je le laisse juste en "souvenir"
+
 http://portaudio.com/docs/v19-doxydocs/compile_linux.html
 
+Setup de portAudio 
 
-gcc thing.c libportaudio.a -lrt -lm -lasound -ljack -pthread -o thing
+    ./configure --without-jack --without-oss --with-alsa
 
+Ici la configuration devrait indiquer ALSA : YES sinon faites
+
+    sudo apt-get install libasound-dev
+
+    make
+    sudo make install
+
+Maintenant copiez portaudio.a
+
+    cp /usr/local/lib/libportaudio.a /YOUR/PROJECT/DIR
+
+Et portAudio.h localisé dans /include
+Pour compiler :
+
+    gcc rpi.c libportaudio.a -lrt -lm -lasound -pthread -o rpi
 
 # Kézako
 
