@@ -9,8 +9,6 @@ fonction de portaudio pour émettre un son*/
 //on utilisera les 16 bouttons de la malette joyPI comme touche pour les sons
 //et les 4 boutons à part pour des commandes spéciales (enregister une composition, etc)
 
-int boutton [] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
 //scanButton test la valeur envoyé par le l'input sélectionné
 
 void scanButton (int boutton)
@@ -26,7 +24,7 @@ void scanButton (int boutton)
 
 void fonction(int boutton)
 {
-  printf("boutton",boutton);
+  printf("boutton" + boutton);
 }
 
 int main (void)
@@ -43,7 +41,7 @@ int main (void)
   {
     pinMode         (i, INPUT) ;
     pullUpDnControl (i, PUD_UP) ;
-    boutton [i] = 0 ;
+    //boutton [i] = 0 ;
   }
 
   while (a!=0)
