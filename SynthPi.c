@@ -18,6 +18,7 @@
 void tune(int);
 int octSwap(int);
 int harmSwap();
+int waveSwap();
 void scanButton(int);
 void function(int);
 //=====================================================================
@@ -26,7 +27,8 @@ void function(int);
 int Freq[12] ={262,277,293,311,330,349,370,392,415,440,466,493};
 //les freq correspondent à l'octave 4 (définie vulgairement comme le centre du piano) voici les notes dans l'ordre :
 //Do4 (C4), Do#4 (C#4), Ré4 (D4), Ré#4 (D#4), Mi4 (E4), Fa4 (F4), Fa#4 (F#4), Sol4 (G4), Sol#4 (G#4), La4 (A4), La#4 (A#4), Si4 (B4)
-int HarmMode=1;
+int harmMode=1;
+int waveForm=1;
 int oct=4;
 //====================================================================
 
@@ -49,7 +51,7 @@ void fonction(int boutton)
   printf("boutton" + boutton);
 }
 
-void tune(int freq){ 
+void tune(int freq){ //make sure that sox is installed before running
 //the way this function works is that it create a string which contains the sox command and then use it via the system() call
 
   
@@ -62,7 +64,12 @@ void tune(int freq){
     for(int i;i<Harm;i++){
         char command[100];
         
-        strcpy(command,"play -n -c1 synth 3 sine "); // sox command
+        strcpy(command,"play -n -c1 synth 0.2 "); // sox command
+        if(waveForm){
+            strcat(command,"sine "); 
+        }else{
+            strcat(command,"square ");
+        }
         char buffer[50];
         sprintf(buffer,"%d", freq );
         strcat(command,buffer);
@@ -79,7 +86,7 @@ void tune(int freq){
             exit(-1);
         }
         //maybe we can get some special sounds by messing with that
-        if(HarmMode){
+        if(harmMode){
             freq=freq*1.5;
             volu=globalVol*(i+1);
         }else{
@@ -89,14 +96,13 @@ void tune(int freq){
     }
     
     for(int i;i<Harm;i++){
-        
         wait(0);
     }
 
 }
 
 int octSwap(int flag){ //le flag 0 indique que l'on veut descendre d'un octave / le flag 1 indique que l'on veut monter d'un octave
-  //WARNING techniquement on peut utiliser cette commande une infinité de fois pour avoir des fréquence tres basses ou tres haute ... ne faites pas ca si vous tenez à votre matériel et vos oreilles
+    //on limite les octaves accessible à 3-4-5 pour la sécurité de vos oreilles
     if(flag==0){
         if(oct==3){
             return(oct); //sécurité pour eviter les fréquence trop basses
@@ -111,13 +117,24 @@ int octSwap(int flag){ //le flag 0 indique que l'on veut descendre d'un octave /
 }
 
 int harmSwap(){
-    if(HarmMode){
-        HarmMode=0;
-        return(HarmMode);
+    if(harmMode){
+        harmMode=0;
+        return(harmMode);
     }else{
-        HarmMode=1;
-        return(HarmMode);
+        harmMode=1;
+        return(harmMode);
     }
+}
+
+int waveSwap(){ //en mode Square (waveForm=0) évitez de maintenir les notes
+    if(waveForm){
+        waveForm=0;
+        return(waveForm);
+    }else{
+        waveForm=1;
+        return(waveForm);
+    }
+    
 }
 
 
@@ -145,3 +162,4 @@ int main (void)
     delay (1) ;
   }
 }
+
