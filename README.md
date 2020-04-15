@@ -61,3 +61,8 @@ créer une map des boutons
 ## Lib :
 PortAudio
 faudra rajouter la lib pour décoder si on va jusque là
+wiringPi pour l'utilisation des ports GPIO
+
+## infos raspberry:
+login: pi
+password: raspberrypi

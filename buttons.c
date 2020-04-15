@@ -14,46 +14,66 @@ fonction de portaudio pour émettre un son*/
 //on utilisera les 16 bouttons de la malette joyPI comme touche pour les sons
 //et les 4 boutons à part pour des commandes spéciales (enregister une composition, etc)
 
-//scanButton test la valeur envoyé par le l'input sélectionné
+int a;
+int buttons[4][4]= {{'4','3','2','1'},
+                    {'8','7','6','5'},
+                    {'C','B','A','9'},
+                    {'G','F','E','D'}};
+int rowPins[4] = {2,3,21,22};
+int columnPins[4] = {23,24,25,6};
+char boutton; //valeur bu boutton pressé
 
-void scanButton (int boutton) 
+void fonction(int boutton,int fre)
 {
-  if (digitalRead (boutton) == HIGH)	// le bouton est pressé
-    return ;
+  int frequences[4]={392,440,523,698};
+  char str[5];
+  sprintf(str, "%d", boutton);
+  printf(str);
+  printf("\n");
 
-  fonction(boutton);
+  int freq=frequences[fre];
 
-  while (digitalRead (boutton) == LOW)	// on attend que le bouton soit relaché
-    delay (10) ;
-}
-
-void fonction(int boutton)
-{
-  printf("boutton" + boutton);
+  tune(freq);
 }
 
 
 int main (void)
 {
-  int i, a ; //a servira à savoir si le boutton d'arret a été pressé ou non
-
   printf ("Test boutton\n") ;
 
   wiringPiSetup () ;
 
-// Setup des inputs
+  // Setup des inputs et outputs
 
-  for (i = 0 ; i < 20 ; ++i)
+  for (int i = 0 ; i < 4 ; i++)
   {
-    pinMode         (i, INPUT) ;
-    pullUpDnControl (i, PUD_UP) ;
-    //boutton [i] = 0 ;
+    const int row=rowPins[i];
+    const int column=columnPins[i];
+    pinMode         (row, INPUT) ;
+    pinMode (column, OUTPUT);
+    pullUpDnControl (row, PUD_UP) ;
+    digitalWrite(column,1);
   }
 
-  while (a!=0)
+  while (a!=1)
   {
-    for (i = 0 ; i < 20 ; ++i)
-      scanButton (i) ;
-    delay (1) ;
+    for (int i = 0 ; i < 4 ; i++) //on parcourt les colonnes
+    {
+      digitalWrite (columnPins[i],0);
+      for (int j = 0 ; j < 4 ; j++) //on parcourt les lignes
+      {
+        if (digitalRead (rowPins[j]) == 0)
+        {
+          fonction(buttons[j][i],i); //active la fonction associée au boutton situé ligne j colonne i
+          while (digitalRead (rowPins[j]) == 0)
+          {
+            delay(10);
+          }
+        }
+      }
+      digitalWrite(columnPins[i],1);
+    }
   }
 }
+
+
