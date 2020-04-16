@@ -7,6 +7,8 @@ Donc notre lib audio sera sox http://sox.sourceforge.net/
 
     sudo apt-get install sox libsox-fmt-all bc
 
+note: sur la raspberry, la version 14.4.2 de sox ne détecte pas de périphérique audio, on a donc installé la version 14.4.1
+
 ======================================================
 Tous ce qui concerne PortAudio est OUTDATED : je le laisse juste en "souvenir"
 
@@ -66,3 +68,6 @@ wiringPi pour l'utilisation des ports GPIO
 ## infos raspberry:
 login: pi
 password: raspberrypi
+
+erreur lors de l'utilisation de sox:
+can’t open output file ‘/dev/dsp’:unable to reboot OSS driver. possibly accessing an invalid file/device
