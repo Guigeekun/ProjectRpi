@@ -1,10 +1,8 @@
+/*objectif du script:
+détecter lorsque l'un des bouttons de la raspberry est pressé et
+lancer une fonction associée, qui sera à terme remplacée par une 
+fonction de portaudio pour émettre un son*/
 
-// SynthPi Work in Progress
-
-//make sure that sox is installed before running, see readme.md
-
-
-//========================Lib==========================================
 #include <stdio.h>
 #include <wiringPi.h>
 #include <stdlib.h>
@@ -12,44 +10,32 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
-//=====================================================================
 
-//================================Prototype============================
+#define Harm 10 //nombre d'harmoniques qui vont etre présents dans le son produit
+
 void tune(int);
 int octSwap(int);
 int harmSwap();
 int waveSwap();
-void scanButton(int);
-void function(int);
-//=====================================================================
 
-//==============Valeur par défaut (inutile de les modifier)============
-int Freq[12] ={262,277,293,311,330,349,370,392,415,440,466,493};
-//les freq correspondent à l'octave 4 (définie vulgairement comme le centre du piano) voici les notes dans l'ordre :
-//Do4 (C4), Do#4 (C#4), Ré4 (D4), Ré#4 (D#4), Mi4 (E4), Fa4 (F4), Fa#4 (F#4), Sol4 (G4), Sol#4 (G#4), La4 (A4), La#4 (A#4), Si4 (B4)
+//on utilisera les 16 bouttons de la malette joyPI comme touche pour les sons
+
+
+int a;
+int buttons[3][4]= {{1,2,3,4},
+                    {5,6,7,8},
+                    {9,10,11,12}};
+int rowPins[4] = {2,3,21,22};
+int columnPins[4] = {23,24,25,6};
+char boutton; //valeur bu boutton pressé
+int freq[12] ={262,277,293,311,330,349,370,392,415,440,466,493};
+int globalVol=-5;
+
+int oct=4;
 int harmMode=1;
 int waveForm=1;
-int oct=4;
-//====================================================================
 
-int globalVol=-5; // in dB, change that at your own risk, may harm your speaker and/or your hears
-int Harm=10;
 
-void scanButton (int boutton) 
-{
-  if (digitalRead (boutton) == HIGH)	// le bouton est pressé
-    return ;
-
-  fonction(boutton);
-
-  while (digitalRead (boutton) == LOW)	// on attend que le bouton soit relaché
-    delay (10) ;
-}
-
-void fonction(int boutton)
-{
-  printf("boutton" + boutton);
-}
 
 void tune(int freq){ //make sure that sox is installed before running
 //the way this function works is that it create a string which contains the sox command and then use it via the system() call
@@ -64,7 +50,7 @@ void tune(int freq){ //make sure that sox is installed before running
     for(int i;i<Harm;i++){
         char command[100];
         
-        strcpy(command,"play -n -c1 synth 0.2 "); // sox command
+        strcpy(command,"play -n -c1 synth 0.1 "); // sox command
         if(waveForm){
             strcat(command,"sine "); 
         }else{
@@ -96,13 +82,14 @@ void tune(int freq){ //make sure that sox is installed before running
     }
     
     for(int i;i<Harm;i++){
+        
         wait(0);
     }
 
 }
 
 int octSwap(int flag){ //le flag 0 indique que l'on veut descendre d'un octave / le flag 1 indique que l'on veut monter d'un octave
-    //on limite les octaves accessible à 3-4-5 pour la sécurité de vos oreilles
+  //on limite les octaves accessible à 3-4-5 pour la sécurité de vos oreilles
     if(flag==0){
         if(oct==3){
             return(oct); //sécurité pour eviter les fréquence trop basses
@@ -126,40 +113,84 @@ int harmSwap(){
     }
 }
 
-int waveSwap(){ //en mode Square (waveForm=0) évitez de maintenir les notes
+int waveSwap(){
     if(waveForm){
         waveForm=0;
+        printf("\n signal carré \n");
+        globalVol=-5; //la waveForm square sonne plus fort que le sinus on adapte donc le volume
         return(waveForm);
     }else{
         waveForm=1;
+        globalVol=+5;
+        printf("\n signal sinusoïdal \n");
         return(waveForm);
     }
     
 }
 
-
 int main (void)
 {
-  int i, a ; //a servira à savoir si le boutton d'arret a été pressé ou non
-
-    tune(Freq[6]);
-
   wiringPiSetup () ;
 
-// Setup des inputs
+  // Setup des inputs et outputs
 
-  for (i = 0 ; i < 20 ; ++i)
+  for (int i = 0 ; i < 4 ; i++)
   {
-    pinMode         (i, INPUT) ;
-    pullUpDnControl (i, PUD_UP) ;
-    //boutton [i] = 0 ;
+    const int row=rowPins[i];
+    const int column=columnPins[i];
+    pinMode         (row, INPUT) ;
+    pinMode (column, OUTPUT);
+    pullUpDnControl (row, PUD_UP) ;
+    digitalWrite(column,1);
   }
 
-  while (a!=0)
+  while (a!=1)
   {
-    for (i = 0 ; i < 20 ; ++i)
-      scanButton (i) ;
-    delay (1) ;
+    for (int i = 0 ; i < 4 ; i++) //on parcourt les colonnes
+    {
+      digitalWrite (columnPins[i],0);
+      for (int j = 0 ; j < 4 ; j++) //on parcourt les lignes
+      {
+        if (digitalRead (rowPins[j]) == 0)
+        {
+          if (j == 3)
+          {
+            if (i == 0)
+            {
+              octSwap(0);
+              printf("\n on descend d'un octave \n");
+            }
+            if (i == 1)
+            {
+              octSwap(1);
+              printf("\n on monte d'un octave \n");
+            }
+            if (i == 2)
+            {
+              harmSwap();
+              printf("\n changement d'harmoniques \n");
+            }
+            if (i == 3)
+            {
+              waveSwap();
+            }
+          }
+          else
+          {
+            int fre = buttons[j][i] - 1;
+            tune(freq[fre]); //joue la fréquence associée au boutton pressé
+            printf("\n \n \n");
+          }
+          
+          while (digitalRead (rowPins[j]) == 0)
+          {
+            delay(10);
+          }
+        }
+      }
+      digitalWrite(columnPins[i],1);
+    }
   }
 }
+
 
